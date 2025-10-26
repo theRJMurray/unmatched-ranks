@@ -91,21 +91,21 @@ export default function LeaderboardPage() {
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-6 space-y-2 sm:space-y-0">
             <div className="flex items-center">
               <h1 className="text-xl font-semibold text-gray-900">
                 Leaderboard
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
               {currentUser && (
-                <span className="text-gray-700">
+                <span className="text-gray-700 text-sm sm:text-base">
                   {currentUser.username}
                 </span>
               )}
               <Link
                 href="/dashboard"
-                className="text-indigo-600 hover:text-indigo-500"
+                className="text-indigo-600 hover:text-indigo-500 text-sm sm:text-base"
               >
                 Dashboard
               </Link>
@@ -114,8 +114,8 @@ export default function LeaderboardPage() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+      <main className="max-w-7xl mx-auto py-4 sm:py-6 px-4 sm:px-6 lg:px-8">
+        <div className="space-y-6">
           {/* Controls */}
           <div className="bg-white shadow rounded-lg p-6 mb-6">
             <div className="flex flex-wrap items-center gap-4">
@@ -162,7 +162,8 @@ export default function LeaderboardPage() {
                 <div className="text-lg">Loading leaderboard...</div>
               </div>
             ) : (
-              <table className="min-w-full divide-y divide-gray-200">
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -211,6 +212,7 @@ export default function LeaderboardPage() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </div>
 

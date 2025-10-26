@@ -66,7 +66,14 @@ export default function InboxPage() {
     myGamesWon: 2, // Games won by the reporting player
     opponentGamesWon: 0 // Games won by the opponent
   });
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
   const [isEditingReport, setIsEditingReport] = useState(false);
+
+  const setButtonLoading = (key: string, loading: boolean) => {
+    setLoadingStates(prev => ({ ...prev, [key]: loading }));
+  };
+
+  const isButtonLoading = (key: string) => loadingStates[key] || false;
 
   useEffect(() => {
     if (currentUser) {
@@ -104,6 +111,10 @@ export default function InboxPage() {
   const handleAcceptChallenge = async () => {
     if (!showAcceptModal || !selectedDeck) return;
 
+    const loadingKey = `accept-${showAcceptModal._id}`;
+    if (isButtonLoading(loadingKey)) return; // Prevent double-clicking
+
+    setButtonLoading(loadingKey, true);
     try {
       const response = await fetch(`/api/challenges/${showAcceptModal._id}`, {
         method: 'PATCH',
@@ -127,10 +138,16 @@ export default function InboxPage() {
     } catch (error) {
       console.error('Error accepting challenge:', error);
       alert('Failed to accept challenge');
+    } finally {
+      setButtonLoading(loadingKey, false);
     }
   };
 
   const handleDeclineChallenge = async (challengeId: string) => {
+    const loadingKey = `decline-${challengeId}`;
+    if (isButtonLoading(loadingKey)) return; // Prevent double-clicking
+
+    setButtonLoading(loadingKey, true);
     try {
       const response = await fetch(`/api/challenges/${challengeId}`, {
         method: 'PATCH',
@@ -147,12 +164,18 @@ export default function InboxPage() {
     } catch (error) {
       console.error('Error declining challenge:', error);
       alert('Failed to decline challenge');
+    } finally {
+      setButtonLoading(loadingKey, false);
     }
   };
 
   const handleReportMatch = async () => {
     if (!showReportModal || !currentUser) return;
 
+    const loadingKey = `report-${showReportModal._id}`;
+    if (isButtonLoading(loadingKey)) return; // Prevent double-clicking
+
+    setButtonLoading(loadingKey, true);
     try {
       const match = showReportModal;
       const isPlayer1 = match.player1Id._id === currentUser.id;
@@ -187,6 +210,8 @@ export default function InboxPage() {
     } catch (error) {
       console.error('Error reporting match:', error);
       alert('Failed to report match');
+    } finally {
+      setButtonLoading(loadingKey, false);
     }
   };
 
@@ -336,9 +361,10 @@ export default function InboxPage() {
                                   </button>
                                   <button
                                     onClick={() => handleDeclineChallenge(challenge._id)}
-                                    className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 text-sm"
+                                    disabled={isButtonLoading(`decline-${challenge._id}`)}
+                                    className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 text-sm disabled:bg-gray-300 disabled:cursor-not-allowed"
                                   >
-                                    Decline
+                                    {isButtonLoading(`decline-${challenge._id}`) ? 'Declining...' : 'Decline'}
                                   </button>
                                 </>
                               )}
@@ -503,10 +529,10 @@ export default function InboxPage() {
                 </button>
                 <button
                   onClick={handleAcceptChallenge}
-                  disabled={!selectedDeck}
-                  className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:bg-gray-300"
+                  disabled={!selectedDeck || isButtonLoading(`accept-${showAcceptModal?._id}`)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
-                  Accept Challenge
+                  {isButtonLoading(`accept-${showAcceptModal?._id}`) ? 'Accepting...' : 'Accept Challenge'}
                 </button>
               </div>
             </div>
@@ -585,9 +611,10 @@ export default function InboxPage() {
                 </button>
                 <button
                   onClick={handleReportMatch}
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700"
+                  disabled={isButtonLoading(`report-${showReportModal?._id}`)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
-                  {isEditingReport ? 'Update Report' : 'Submit Report'}
+                  {isButtonLoading(`report-${showReportModal?._id}`) ? 'Submitting...' : (isEditingReport ? 'Update Report' : 'Submit Report')}
                 </button>
               </div>
             </div>

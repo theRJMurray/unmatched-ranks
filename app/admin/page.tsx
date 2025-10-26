@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
+import QRCode from 'qrcode';
 
 // Hardcoded Unmatched decks list
 const UNMATCHED_DECKS = [
@@ -37,7 +38,7 @@ interface Match {
   createdAt: string;
 }
 
-type ActiveTab = 'users' | 'matches' | 'tournaments';
+type ActiveTab = 'users' | 'matches' | 'tournaments' | 'qrcode';
 
 export default function AdminDashboard() {
   const { user, logout } = useAuth();
@@ -60,6 +61,14 @@ export default function AdminDashboard() {
     p1GamesWon: 1,
     p2GamesWon: 0
   });
+  const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
+
+  const setButtonLoading = (key: string, loading: boolean) => {
+    setLoadingStates(prev => ({ ...prev, [key]: loading }));
+  };
+
+  const isButtonLoading = (key: string) => loadingStates[key] || false;
 
   useEffect(() => {
     console.log('Admin page - Current user:', user);
@@ -107,6 +116,10 @@ export default function AdminDashboard() {
   };
 
   const handleRoleChange = async (userId: string, newRole: string) => {
+    const loadingKey = `role-${userId}`;
+    if (isButtonLoading(loadingKey)) return; // Prevent double-clicking
+
+    setButtonLoading(loadingKey, true);
     try {
       const response = await fetch(`/api/users/${userId}`, {
         method: 'PATCH',
@@ -123,10 +136,105 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error updating role:', error);
       alert('Failed to update role');
+    } finally {
+      setButtonLoading(loadingKey, false);
     }
   };
 
+  const handleResetELO = async (userId: string, username: string) => {
+    const loadingKey = `reset-elo-${userId}`;
+    if (isButtonLoading(loadingKey)) return; // Prevent double-clicking
+
+    if (!confirm(`Are you sure you want to reset ${username}'s ELO to default values (1500 lifetime, 1200 seasonal)? This action cannot be undone.`)) {
+      return;
+    }
+
+    setButtonLoading(loadingKey, true);
+    try {
+      const response = await fetch(`/api/users/${userId}/reset-elo`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        alert(`${username}'s ELO has been reset successfully`);
+        loadData(); // Reload data
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to reset ELO');
+      }
+    } catch (error) {
+      console.error('Error resetting ELO:', error);
+      alert('Failed to reset ELO');
+    } finally {
+      setButtonLoading(loadingKey, false);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string, username: string) => {
+    const loadingKey = `delete-${userId}`;
+    if (isButtonLoading(loadingKey)) return; // Prevent double-clicking
+
+    if (!confirm(`Are you sure you want to delete user "${username}"? This will permanently delete their account, matches, and challenges. This action cannot be undone.`)) {
+      return;
+    }
+
+    setButtonLoading(loadingKey, true);
+    try {
+      const response = await fetch(`/api/users/${userId}/delete`, {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' }
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        alert(`User "${result.deletedUser.username}" deleted successfully`);
+        loadData(); // Reload data
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to delete user');
+      }
+    } catch (error) {
+      console.error('Error deleting user:', error);
+      alert('Failed to delete user');
+    } finally {
+      setButtonLoading(loadingKey, false);
+    }
+  };
+
+  const generateQRCode = async () => {
+    try {
+      const url = 'https://rematrixv.com';
+      const dataUrl = await QRCode.toDataURL(url, {
+        width: 300,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#FFFFFF'
+        }
+      });
+      setQrCodeDataUrl(dataUrl);
+    } catch (error) {
+      console.error('Error generating QR code:', error);
+      alert('Failed to generate QR code');
+    }
+  };
+
+  const downloadQRCode = () => {
+    if (qrCodeDataUrl) {
+      const link = document.createElement('a');
+      link.download = 'rematrixv-qr-code.png';
+      link.href = qrCodeDataUrl;
+      link.click();
+    }
+  };
+
+
   const handleCreateMatch = async () => {
+    const loadingKey = 'create-match';
+    if (isButtonLoading(loadingKey)) return; // Prevent double-clicking
+
+    setButtonLoading(loadingKey, true);
     try {
       const response = await fetch('/api/matches', {
         method: 'POST',
@@ -151,12 +259,18 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error creating match:', error);
       alert('Failed to create match');
+    } finally {
+      setButtonLoading(loadingKey, false);
     }
   };
 
   const handleResolveDispute = async () => {
     if (!showResolveModal) return;
 
+    const loadingKey = `resolve-${showResolveModal._id}`;
+    if (isButtonLoading(loadingKey)) return; // Prevent double-clicking
+
+    setButtonLoading(loadingKey, true);
     try {
       // Determine winner based on games won
       const winnerId = resolveData.p1GamesWon > resolveData.p2GamesWon 
@@ -184,6 +298,8 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error resolving dispute:', error);
       alert('Failed to resolve dispute');
+    } finally {
+      setButtonLoading(loadingKey, false);
     }
   };
 
@@ -196,19 +312,19 @@ export default function AdminDashboard() {
       {/* Header */}
       <header className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-4 sm:py-6 space-y-2 sm:space-y-0">
             <div className="flex items-center">
-              <h1 className="text-xl font-semibold text-gray-900">
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
                 Admin Dashboard
               </h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-gray-700">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
+              <span className="text-gray-700 text-sm sm:text-base">
                 Welcome, {user.username}
               </span>
               <button
                 onClick={handleLogout}
-                className="text-gray-500 hover:text-gray-700"
+                className="text-gray-500 hover:text-gray-700 text-sm sm:text-base"
               >
                 Logout
               </button>
@@ -217,15 +333,15 @@ export default function AdminDashboard() {
         </div>
       </header>
 
-      <div className="flex">
+      <div className="flex flex-col lg:flex-row">
         {/* Sidebar */}
-        <nav className="w-64 bg-white shadow-sm min-h-screen">
+        <nav className="w-full lg:w-64 bg-white shadow-sm min-h-screen">
           <div className="p-4">
-            <ul className="space-y-2">
+            <ul className="space-y-2 flex flex-wrap lg:flex-col gap-2 lg:gap-0">
               <li>
                 <button
                   onClick={() => setActiveTab('users')}
-                  className={`w-full text-left px-3 py-2 rounded-md ${
+                  className={`w-full text-left px-3 py-2 rounded-md text-sm ${
                     activeTab === 'users'
                       ? 'bg-indigo-100 text-indigo-700'
                       : 'text-gray-700 hover:bg-gray-100'
@@ -237,7 +353,7 @@ export default function AdminDashboard() {
               <li>
                 <button
                   onClick={() => setActiveTab('matches')}
-                  className={`w-full text-left px-3 py-2 rounded-md ${
+                  className={`w-full text-left px-3 py-2 rounded-md text-sm ${
                     activeTab === 'matches'
                       ? 'bg-indigo-100 text-indigo-700'
                       : 'text-gray-700 hover:bg-gray-100'
@@ -249,7 +365,7 @@ export default function AdminDashboard() {
               <li>
                 <button
                   onClick={() => setActiveTab('tournaments')}
-                  className={`w-full text-left px-3 py-2 rounded-md ${
+                  className={`w-full text-left px-3 py-2 rounded-md text-sm ${
                     activeTab === 'tournaments'
                       ? 'bg-indigo-100 text-indigo-700'
                       : 'text-gray-700 hover:bg-gray-100'
@@ -258,12 +374,24 @@ export default function AdminDashboard() {
                   Tournaments
                 </button>
               </li>
+              <li>
+                <button
+                  onClick={() => setActiveTab('qrcode')}
+                  className={`w-full text-left px-3 py-2 rounded-md text-sm ${
+                    activeTab === 'qrcode'
+                      ? 'bg-indigo-100 text-indigo-700'
+                      : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  QR Code
+                </button>
+              </li>
             </ul>
           </div>
         </nav>
 
         {/* Main Content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-4 lg:p-6">
           {loading ? (
             <div className="flex items-center justify-center h-64">
               <div className="text-lg">Loading...</div>
@@ -274,7 +402,8 @@ export default function AdminDashboard() {
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">Users</h2>
                   <div className="bg-white shadow overflow-hidden sm:rounded-md">
-                    <table className="min-w-full divide-y divide-gray-200">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -322,21 +451,40 @@ export default function AdminDashboard() {
                               {Math.round(user.eloSeasonal)}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              <select
-                                value={user.role}
-                                onChange={(e) => handleRoleChange(user._id || user.id, e.target.value)}
-                                className="border border-gray-300 rounded-md px-2 py-1 text-sm"
-                                disabled={user._id === user._id} // Can't change own role
-                              >
-                                <option value="user">User</option>
-                                <option value="organizer">Organizer</option>
-                                <option value="admin">Admin</option>
-                              </select>
+                              <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2">
+                                <select
+                                  value={user.role}
+                                  onChange={(e) => handleRoleChange(user._id || user.id, e.target.value)}
+                                  disabled={isButtonLoading(`role-${user._id || user.id}`)}
+                                  className="border border-gray-300 rounded-md px-2 py-1 text-xs sm:text-sm w-full sm:w-auto disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                >
+                                  <option value="user">User</option>
+                                  <option value="organizer">Organizer</option>
+                                  <option value="admin">Admin</option>
+                                </select>
+                                <div className="flex space-x-1 w-full sm:w-auto">
+                                  <button
+                                    onClick={() => handleResetELO(user._id || user.id, user.username)}
+                                    disabled={isButtonLoading(`reset-elo-${user._id || user.id}`)}
+                                    className="bg-yellow-600 text-white px-2 py-1 rounded text-xs hover:bg-yellow-700 flex-1 sm:flex-none disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                  >
+                                    {isButtonLoading(`reset-elo-${user._id || user.id}`) ? 'Resetting...' : 'Reset ELO'}
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteUser(user._id || user.id, user.username)}
+                                    disabled={isButtonLoading(`delete-${user._id || user.id}`)}
+                                    className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 flex-1 sm:flex-none disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                  >
+                                    {isButtonLoading(`delete-${user._id || user.id}`) ? 'Deleting...' : 'Delete'}
+                                  </button>
+                                </div>
+                              </div>
                             </td>
                           </tr>
                         ))}
                       </tbody>
-                    </table>
+                      </table>
+                    </div>
                   </div>
                 </div>
               )}
@@ -365,7 +513,8 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div className="bg-white shadow overflow-hidden sm:rounded-md">
-                    <table className="min-w-full divide-y divide-gray-200">
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
                           <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -441,7 +590,8 @@ export default function AdminDashboard() {
                           </tr>
                         ))}
                       </tbody>
-                    </table>
+                      </table>
+                    </div>
                   </div>
                 </div>
               )}
@@ -451,6 +601,48 @@ export default function AdminDashboard() {
                   <h2 className="text-2xl font-bold text-gray-900 mb-6">Tournaments</h2>
                   <div className="bg-white shadow rounded-md p-6">
                     <p className="text-gray-500">Tournament management coming soon...</p>
+                  </div>
+                </div>
+              )}
+
+              {activeTab === 'qrcode' && (
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">QR Code Generator</h2>
+                  <div className="bg-white shadow rounded-md p-6">
+                    <div className="text-center">
+                      <p className="text-gray-600 mb-6">
+                        Generate a QR code that links to <strong>https://rematrixv.com</strong>
+                      </p>
+                      
+                      <div className="mb-6">
+                        <button
+                          onClick={generateQRCode}
+                          className="bg-indigo-600 text-white px-6 py-3 rounded-md hover:bg-indigo-700 transition-colors"
+                        >
+                          Generate QR Code
+                        </button>
+                      </div>
+
+                      {qrCodeDataUrl && (
+                        <div className="space-y-4">
+                          <div className="flex justify-center">
+                            <img 
+                              src={qrCodeDataUrl} 
+                              alt="QR Code for rematrixv.com" 
+                              className="border border-gray-300 rounded-lg shadow-sm max-w-full h-auto"
+                            />
+                          </div>
+                          <div>
+                            <button
+                              onClick={downloadQRCode}
+                              className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors w-full sm:w-auto"
+                            >
+                              Download QR Code
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -559,9 +751,10 @@ export default function AdminDashboard() {
                 </button>
                 <button
                   onClick={handleCreateMatch}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                  disabled={isButtonLoading('create-match')}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
-                  Create Match
+                  {isButtonLoading('create-match') ? 'Creating...' : 'Create Match'}
                 </button>
               </div>
             </div>
@@ -639,10 +832,10 @@ export default function AdminDashboard() {
                 </button>
                 <button
                   onClick={handleResolveDispute}
-                  disabled={resolveData.p1GamesWon === resolveData.p2GamesWon}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:bg-gray-300"
+                  disabled={resolveData.p1GamesWon === resolveData.p2GamesWon || isButtonLoading(`resolve-${showResolveModal?._id}`)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
-                  Resolve Dispute
+                  {isButtonLoading(`resolve-${showResolveModal?._id}`) ? 'Resolving...' : 'Resolve Dispute'}
                 </button>
               </div>
             </div>

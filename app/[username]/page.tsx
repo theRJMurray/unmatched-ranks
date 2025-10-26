@@ -44,6 +44,13 @@ export default function UserProfilePage() {
   const [eloType, setEloType] = useState<'lifetime' | 'seasonal'>('lifetime');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [loadingStates, setLoadingStates] = useState<Record<string, boolean>>({});
+
+  const setButtonLoading = (key: string, loading: boolean) => {
+    setLoadingStates(prev => ({ ...prev, [key]: loading }));
+  };
+
+  const isButtonLoading = (key: string) => loadingStates[key] || false;
 
   const username = params.username as string;
 
@@ -103,6 +110,10 @@ export default function UserProfilePage() {
   const handleChallenge = async () => {
     if (!profile || !currentUser || !challengeData.deck) return;
 
+    const loadingKey = `challenge-${profile.id}`;
+    if (isButtonLoading(loadingKey)) return; // Prevent double-clicking
+
+    setButtonLoading(loadingKey, true);
     try {
       const response = await fetch('/api/challenges', {
         method: 'POST',
@@ -125,16 +136,11 @@ export default function UserProfilePage() {
     } catch (error) {
       console.error('Error sending challenge:', error);
       alert('Failed to send challenge');
+    } finally {
+      setButtonLoading(loadingKey, false);
     }
   };
 
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'admin': return 'bg-red-100 text-red-800';
-      case 'organizer': return 'bg-green-100 text-green-800';
-      default: return 'bg-blue-100 text-blue-800';
-    }
-  };
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString();
@@ -196,11 +202,6 @@ export default function UserProfilePage() {
             <div className="flex items-center justify-between">
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">{profile.username}</h1>
-                <div className="mt-2 flex items-center space-x-4">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(profile.role)}`}>
-                    {profile.role}
-                  </span>
-                </div>
               </div>
               <div className="text-right">
                 <div className="text-4xl font-bold text-indigo-600">
@@ -393,10 +394,10 @@ export default function UserProfilePage() {
                 </button>
                 <button
                   onClick={handleChallenge}
-                  disabled={!challengeData.deck}
-                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-gray-300"
+                  disabled={!challengeData.deck || isButtonLoading(`challenge-${profile?.id}`)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                 >
-                  Send Challenge
+                  {isButtonLoading(`challenge-${profile?.id}`) ? 'Sending...' : 'Send Challenge'}
                 </button>
               </div>
             </div>

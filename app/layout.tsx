@@ -18,6 +18,11 @@ export const metadata: Metadata = {
   description: "Track ELO ratings for the board game Unmatched",
 };
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{

@@ -15,6 +15,9 @@ A Next.js web application for tracking ELO ratings in the board game Unmatched.
 - Role-based access control with audit logging
 - ELO rating system with automatic calculations
 - Match reporting and dispute resolution
+- Player profiles with ELO history graphs
+- Public leaderboard with seasonal tracking
+- Challenge system for player matchups
 
 ## Setup
 
@@ -99,6 +102,14 @@ After running the seed script, you can log in with:
 ### Match Reporting
 - `POST /api/matches/[id]/report` - Submit match result report (players only)
 
+### User Profiles & Leaderboard
+- `GET /api/profiles/[username]` - Get public user profile data
+- `GET /api/profiles/[username]/history` - Get ELO history for charts
+- `GET /api/leaderboard` - Get leaderboard data (lifetime/seasonal)
+- `POST /api/challenges` - Create a challenge between players
+- `GET /api/seasons` - Get all seasons
+- `POST /api/seasons` - Start new season (admin only)
+
 ## Security Features
 
 - Password hashing with bcrypt
@@ -154,6 +165,38 @@ The application includes a complete ELO rating system:
 
 ### Testing
 Run `npm run test-elo` to test the ELO calculation system.
+
+## Player Profiles & Leaderboard
+
+### User Profiles (`/username`)
+- **Public profiles** accessible at `/username` (dynamic routes)
+- **ELO display** with lifetime and seasonal ratings
+- **Role badges** with color coding (blue: user, green: organizer, red: admin)
+- **Win rate statistics** calculated from match history
+- **Recent matches table** showing opponent, deck, format, result, and ELO change
+- **ELO history graph** using Recharts for visual ELO progression
+- **Challenge button** for logged-in users to challenge other players
+- **Edit profile** option for own profile
+
+### Leaderboard (`/leaderboard`)
+- **Top 50 players** sorted by ELO rating
+- **Dual view modes** - lifetime and seasonal ELO
+- **Season selection** for seasonal leaderboard
+- **Comprehensive stats** - rank, username, role, ELO, win rate, matches played
+- **Clickable usernames** linking to player profiles
+- **Role badges** and rank highlighting
+
+### Challenge System
+- **Player-to-player challenges** via profile pages
+- **Pending challenge tracking** to prevent duplicates
+- **Challenge status management** (Pending, Accepted, Declined, Expired)
+- **Redirect to inbox** for challenge management (stub implementation)
+
+### Seasonal System
+- **Season management** with start/end dates
+- **Automatic ELO reset** to 1200 when new season starts
+- **Season history tracking** for leaderboard filtering
+- **Admin controls** for starting new seasons
 
 ## Next Steps
 

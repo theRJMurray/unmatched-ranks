@@ -122,13 +122,19 @@ async function applyEloChanges(match: any) {
     totalGames
   );
 
-  // Update both players' ratings atomically
+  // Determine winner for statistics
+  const player1Won = match.resolvedP1GamesWon > (totalGames - match.resolvedP1GamesWon);
+  const player2Won = !player1Won;
+
+  // Update both players' ratings and statistics atomically
   await User.updateOne(
     { _id: match.player1Id },
     { 
       $inc: { 
         eloLifetime: lifetimeChanges.player1Change,
-        eloSeasonal: seasonalChanges.player1Change
+        eloSeasonal: seasonalChanges.player1Change,
+        matchesPlayed: 1,
+        wins: player1Won ? 1 : 0
       }
     }
   );
@@ -138,7 +144,9 @@ async function applyEloChanges(match: any) {
     { 
       $inc: { 
         eloLifetime: lifetimeChanges.player2Change,
-        eloSeasonal: seasonalChanges.player2Change
+        eloSeasonal: seasonalChanges.player2Change,
+        matchesPlayed: 1,
+        wins: player2Won ? 1 : 0
       }
     }
   );

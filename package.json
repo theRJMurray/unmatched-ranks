@@ -10,7 +10,8 @@
     "seed": "tsx scripts/seed-admin.ts",
     "promote-admin": "tsx scripts/promote-to-admin.ts",
     "check-role": "tsx scripts/check-user-role.ts",
-    "test-elo": "tsx scripts/test-elo.ts"
+    "test-elo": "tsx scripts/test-elo.ts",
+    "seed-season": "tsx scripts/seed-season.ts"
   },
   "dependencies": {
     "@types/bcrypt": "^6.0.0",
@@ -22,7 +23,8 @@
     "mongoose": "^8.19.2",
     "next": "16.0.0",
     "react": "19.2.0",
-    "react-dom": "19.2.0"
+    "react-dom": "19.2.0",
+    "recharts": "^3.3.0"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

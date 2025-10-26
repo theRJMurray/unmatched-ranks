@@ -8,9 +8,17 @@ export interface IMatch extends Document {
   format: 'best-of-1' | 'best-of-3';
   winner: mongoose.Types.ObjectId | null;
   status: 'Pending' | 'Completed' | 'Disputed';
+  // ELO tracking fields
+  eloLifetimeStartP1: number;
+  eloLifetimeStartP2: number;
+  eloSeasonalStartP1: number;
+  eloSeasonalStartP2: number;
+  resolvedP1GamesWon: number | null;
+  // Updated reports structure
   reports: Array<{
-    reportedBy: mongoose.Types.ObjectId;
-    reportedWinner: mongoose.Types.ObjectId;
+    reporterId: mongoose.Types.ObjectId;
+    reportedWinnerId: mongoose.Types.ObjectId;
+    reportedP1GamesWon: number;
     reportedAt: Date;
   }>;
   createdAt: Date;
@@ -51,16 +59,43 @@ const MatchSchema = new Schema<IMatch>({
     enum: ['Pending', 'Completed', 'Disputed'],
     default: 'Pending'
   },
+  // ELO tracking fields
+  eloLifetimeStartP1: {
+    type: Number,
+    required: true
+  },
+  eloLifetimeStartP2: {
+    type: Number,
+    required: true
+  },
+  eloSeasonalStartP1: {
+    type: Number,
+    required: true
+  },
+  eloSeasonalStartP2: {
+    type: Number,
+    required: true
+  },
+  resolvedP1GamesWon: {
+    type: Number,
+    default: null
+  },
+  // Updated reports structure
   reports: [{
-    reportedBy: {
+    reporterId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true
     },
-    reportedWinner: {
+    reportedWinnerId: {
       type: Schema.Types.ObjectId,
       ref: 'User',
       required: true
+    },
+    reportedP1GamesWon: {
+      type: Number,
+      required: true,
+      min: 0
     },
     reportedAt: {
       type: Date,

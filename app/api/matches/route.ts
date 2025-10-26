@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
 
     await connectDB();
 
-    // Verify both players exist
+    // Verify both players exist and get their current ELO ratings
     const players = await User.find({ _id: { $in: [player1Id, player2Id] } });
     if (players.length !== 2) {
       return NextResponse.json(
@@ -90,14 +90,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Create new match
+    // Find player1 and player2 (ensure player1 has lower ID for consistency)
+    const player1 = players.find(p => p._id.toString() === player1Id);
+    const player2 = players.find(p => p._id.toString() === player2Id);
+    
+    if (!player1 || !player2) {
+      return NextResponse.json(
+        { error: 'Player lookup failed' },
+        { status: 400 }
+      );
+    }
+
+    // Create new match with initial ELO ratings
     const match = new Match({
       player1Id,
       player2Id,
       deck1,
       deck2,
       format,
-      status: 'Pending'
+      status: 'Pending',
+      eloLifetimeStartP1: player1.eloLifetime,
+      eloLifetimeStartP2: player2.eloLifetime,
+      eloSeasonalStartP1: player1.eloSeasonal,
+      eloSeasonalStartP2: player2.eloSeasonal
     });
 
     await match.save();

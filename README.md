@@ -13,6 +13,8 @@ A Next.js web application for tracking ELO ratings in the board game Unmatched.
 - Admin dashboard with user and match management
 - Match creation and tracking system
 - Role-based access control with audit logging
+- ELO rating system with automatic calculations
+- Match reporting and dispute resolution
 
 ## Setup
 
@@ -94,6 +96,9 @@ After running the seed script, you can log in with:
 - `POST /api/matches` - Create new match (admin only)
 - `PUT /api/matches/[id]` - Update match winner/status (admin only)
 
+### Match Reporting
+- `POST /api/matches/[id]/report` - Submit match result report (players only)
+
 ## Security Features
 
 - Password hashing with bcrypt
@@ -123,16 +128,39 @@ Access the admin dashboard at `/admin` (admin role required):
 - Support for all official Unmatched decks
 - Match formats: best-of-1 and best-of-3
 - Track match status: Pending, Completed, Disputed
+- Automatic ELO calculation and updates
+- Match reporting system for players
 
 ### Tournaments Section
 - Placeholder for future tournament management features
 
+## ELO Rating System
+
+The application includes a complete ELO rating system:
+
+### Features
+- **K-factor**: 32 for all calculations
+- **Dual ratings**: Separate lifetime and seasonal ELO tracking
+- **Match formats**: Supports best-of-1 and best-of-3 matches
+- **Automatic calculation**: ELO changes applied when matches are resolved
+- **Atomic updates**: Database transactions ensure data consistency
+
+### How It Works
+1. **Match Creation**: Initial ELO ratings are stored when match is created
+2. **Player Reports**: Both players can report match results
+3. **Auto-Resolution**: If reports agree, match is automatically resolved
+4. **ELO Updates**: Ratings are updated based on initial ratings and final result
+5. **Dispute Handling**: Conflicting reports are flagged for admin review
+
+### Testing
+Run `npm run test-elo` to test the ELO calculation system.
+
 ## Next Steps
 
 Future features will include:
-- ELO calculation system
-- Match reporting by players
 - Tournament bracket management
 - User profiles and leaderboards
 - Challenge system
-- Match dispute resolution
+- Match dispute resolution UI
+- ELO history tracking
+- Seasonal resets

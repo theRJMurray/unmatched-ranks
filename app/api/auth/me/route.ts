@@ -14,6 +14,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    console.log('JWT Token role:', currentUser.role);
+    console.log('JWT Token userId:', currentUser.userId);
+
     await connectDB();
     
     const user = await User.findById(currentUser.userId).select('-password');
@@ -24,6 +27,9 @@ export async function GET(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    console.log('Database user role:', user.role);
+    console.log('Database user username:', user.username);
 
     return NextResponse.json({
       user: {

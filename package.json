@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "tsx scripts/seed-admin.ts",
-    "promote-admin": "tsx scripts/promote-to-admin.ts"
+    "promote-admin": "tsx scripts/promote-to-admin.ts",
+    "check-role": "tsx scripts/check-user-role.ts"
   },
   "dependencies": {
     "@types/bcrypt": "^6.0.0",

@@ -9,6 +9,11 @@ export interface IUser extends Document {
   eloLifetime: number;
   eloSeasonal: number;
   role: 'user' | 'organizer' | 'admin';
+  roleAudit?: {
+    changedBy: mongoose.Types.ObjectId;
+    changedAt: Date;
+    oldRole: string;
+  };
   createdAt: Date;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
@@ -51,6 +56,14 @@ const UserSchema = new Schema<IUser>({
     type: String,
     enum: ['user', 'organizer', 'admin'],
     default: 'user'
+  },
+  roleAudit: {
+    changedBy: {
+      type: Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    changedAt: Date,
+    oldRole: String
   },
   createdAt: {
     type: Date,

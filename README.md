@@ -10,6 +10,9 @@ A Next.js web application for tracking ELO ratings in the board game Unmatched.
 - MongoDB database with Mongoose
 - Protected routes with middleware
 - Responsive design with Tailwind CSS
+- Admin dashboard with user and match management
+- Match creation and tracking system
+- Role-based access control with audit logging
 
 ## Setup
 
@@ -78,10 +81,18 @@ After running the seed script, you can log in with:
 
 ## API Endpoints
 
+### Authentication
 - `POST /api/auth/signup` - User registration
 - `POST /api/auth/login` - User login
 - `POST /api/auth/logout` - User logout
 - `GET /api/auth/me` - Get current user
+
+### Admin Only
+- `GET /api/users` - List all users (admin only)
+- `PATCH /api/users/[id]` - Update user role (admin only)
+- `GET /api/matches` - List matches with populated user data
+- `POST /api/matches` - Create new match (admin only)
+- `PUT /api/matches/[id]` - Update match winner/status (admin only)
 
 ## Security Features
 
@@ -97,11 +108,31 @@ After running the seed script, you can log in with:
 - Build for production: `npm run build`
 - Start production server: `npm start`
 
+## Admin Dashboard
+
+Access the admin dashboard at `/admin` (admin role required):
+
+### Users Section
+- View all users with their roles and ELO ratings
+- Promote/demote users between roles (user, organizer, admin)
+- Role changes are logged with audit trail
+
+### Matches Section
+- View recent matches in a sortable table
+- Create new matches with player selection and deck assignment
+- Support for all official Unmatched decks
+- Match formats: best-of-1 and best-of-3
+- Track match status: Pending, Completed, Disputed
+
+### Tournaments Section
+- Placeholder for future tournament management features
+
 ## Next Steps
 
-This is the first part of the application focusing on authentication. Future features will include:
-- Match creation and reporting
+Future features will include:
 - ELO calculation system
-- Tournament management
+- Match reporting by players
+- Tournament bracket management
 - User profiles and leaderboards
 - Challenge system
+- Match dispute resolution

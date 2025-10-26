@@ -29,11 +29,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshUser = async () => {
     try {
+      console.log('Refreshing user data...');
       const response = await fetch('/api/auth/me');
+      console.log('Refresh response status:', response.status);
       if (response.ok) {
         const data = await response.json();
+        console.log('Refreshed user data:', data.user);
         setUser(data.user);
       } else {
+        console.log('Failed to refresh user, clearing user data');
         setUser(null);
       }
     } catch (error) {

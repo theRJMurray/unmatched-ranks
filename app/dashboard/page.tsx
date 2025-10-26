@@ -3,6 +3,7 @@
 import { useAuth } from '@/lib/auth-context';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
+import Link from 'next/link';
 
 export default function DashboardPage() {
   const { user, loading, logout } = useAuth();
@@ -94,9 +95,19 @@ export default function DashboardPage() {
               </div>
               
               <div className="mt-8">
-                <p className="text-gray-600">
+                <p className="text-gray-600 mb-4">
                   More features coming soon! This is a protected route that requires authentication.
                 </p>
+                {user.role === 'admin' && (
+                  <div>
+                    <Link
+                      href="/admin"
+                      className="inline-block bg-red-600 text-white px-6 py-3 rounded-md hover:bg-red-700"
+                    >
+                      Admin Dashboard
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           </div>

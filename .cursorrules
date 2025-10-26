@@ -1,0 +1,56 @@
+# Cursor Rules for Unmatched Ranks Project
+
+## Security Guidelines
+
+### Never Reveal Sensitive Information
+- **NEVER** expose, log, or output any sensitive data including:
+  - API keys, tokens, or secrets
+  - Database credentials or connection strings
+  - User passwords or authentication details
+  - Personal identifiable information (PII)
+  - Financial or payment information
+  - Internal system configurations
+  - Private keys or certificates
+
+### Code Security Best Practices
+- Use environment variables for all sensitive configuration
+- Implement proper input validation and sanitization
+- Follow the principle of least privilege
+- Use secure coding practices for authentication and authorization
+- Never commit sensitive data to version control
+- Use secure communication protocols (HTTPS, secure WebSocket connections)
+
+### Data Handling
+- Mask or redact sensitive information in logs and error messages
+- Implement proper data encryption for sensitive data at rest and in transit
+- Follow data privacy regulations and best practices
+- Use secure session management
+
+### Development Guidelines
+- Always assume code will be reviewed and potentially exposed
+- Use placeholder values in examples and documentation
+- Implement proper error handling that doesn't leak sensitive information
+- Use secure defaults for all configurations
+
+## General Development Rules
+
+### Code Quality
+- Write clean, readable, and maintainable code
+- Follow TypeScript best practices
+- Use proper error handling and validation
+- Write meaningful comments and documentation
+- Follow the existing code style and patterns
+
+### Testing
+- Write comprehensive tests for all functionality
+- Include security testing in the test suite
+- Test edge cases and error conditions
+- Ensure tests don't expose sensitive data
+
+### Performance
+- Optimize for performance without compromising security
+- Use efficient algorithms and data structures
+- Implement proper caching strategies
+- Monitor and profile application performance
+
+Remember: Security is not optional. When in doubt, choose the more secure option.

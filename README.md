@@ -1,36 +1,107 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Unmatched Ranks
 
-## Getting Started
+A Next.js web application for tracking ELO ratings in the board game Unmatched.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- JWT-based authentication with email/password
+- User roles: admin, tournament organizer, user
+- ELO rating system (lifetime and seasonal)
+- MongoDB database with Mongoose
+- Protected routes with middleware
+- Responsive design with Tailwind CSS
+
+## Setup
+
+### Prerequisites
+
+- Node.js 18+ 
+- MongoDB (local or cloud instance)
+
+### Installation
+
+1. Clone the repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Set up environment variables:
+   Create a `.env.local` file in the root directory:
+   ```
+   MONGODB_URI=mongodb://localhost:27017/unmatched-ranks
+   JWT_SECRET=your-super-secret-jwt-key-change-this-in-production
+   NEXTAUTH_URL=http://localhost:3000
+   ```
+
+4. Start MongoDB (if running locally)
+
+5. Seed the initial admin user:
+   ```bash
+   npm run seed
+   ```
+
+6. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+7. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+## Default Admin User
+
+After running the seed script, you can log in with:
+- Email: `admin@unmatched-ranks.com`
+- Password: `admin123`
+
+**Important**: Change the admin password after first login!
+
+## Project Structure
+
+```
+├── app/                    # Next.js app directory
+│   ├── api/auth/          # Authentication API routes
+│   ├── dashboard/         # Protected dashboard page
+│   ├── login/            # Login page
+│   ├── signup/           # Signup page
+│   └── page.tsx          # Home page
+├── lib/                   # Utility libraries
+│   ├── auth.ts           # JWT utilities
+│   ├── auth-context.tsx  # React auth context
+│   └── mongodb.ts        # Database connection
+├── models/               # Mongoose schemas
+│   └── User.ts           # User model
+├── scripts/              # Database scripts
+│   └── seed-admin.ts     # Admin user seeder
+└── middleware.ts         # Route protection middleware
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## API Endpoints
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- `POST /api/auth/signup` - User registration
+- `POST /api/auth/login` - User login
+- `POST /api/auth/logout` - User logout
+- `GET /api/auth/me` - Get current user
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Security Features
 
-## Learn More
+- Password hashing with bcrypt
+- JWT tokens stored in httpOnly cookies
+- Route protection middleware
+- Input validation and sanitization
+- Username normalization (lowercase)
 
-To learn more about Next.js, take a look at the following resources:
+## Development
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- Run linting: `npm run lint`
+- Build for production: `npm run build`
+- Start production server: `npm start`
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Next Steps
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This is the first part of the application focusing on authentication. Future features will include:
+- Match creation and reporting
+- ELO calculation system
+- Tournament management
+- User profiles and leaderboards
+- Challenge system

@@ -83,8 +83,12 @@ export function getTotalGames(format: 'best-of-1' | 'best-of-3'): number {
  * @returns True if valid
  */
 export function isValidGamesWon(gamesWon: number, format: 'best-of-1' | 'best-of-3'): boolean {
-  const totalGames = getTotalGames(format);
-  return gamesWon >= 0 && gamesWon <= totalGames;
+  if (format === 'best-of-1') {
+    return gamesWon === 0 || gamesWon === 1;
+  } else {
+    // best-of-3: winner needs 2 games, loser can have 0-1 games
+    return gamesWon >= 0 && gamesWon <= 2;
+  }
 }
 
 /**
@@ -97,14 +101,14 @@ export function determineWinner(
   player1GamesWon: number, 
   format: 'best-of-1' | 'best-of-3'
 ): 1 | 2 | null {
-  const totalGames = getTotalGames(format);
-  const requiredWins = Math.ceil(totalGames / 2);
-  
-  if (player1GamesWon >= requiredWins) {
-    return 1;
-  } else if ((totalGames - player1GamesWon) >= requiredWins) {
-    return 2;
+  if (format === 'best-of-1') {
+    if (player1GamesWon === 1) return 1;
+    if (player1GamesWon === 0) return 2;
+    return null; // Invalid
+  } else {
+    // best-of-3: winner needs 2 games
+    if (player1GamesWon === 2) return 1;
+    if (player1GamesWon === 0 || player1GamesWon === 1) return 2;
+    return null; // Invalid
   }
-  
-  return null; // Invalid result
 }

@@ -17,7 +17,9 @@ A Next.js web application for tracking ELO ratings in the board game Unmatched.
 - Match reporting and dispute resolution
 - Player profiles with ELO history graphs
 - Public leaderboard with seasonal tracking
-- Challenge system for player matchups
+- Complete challenge system with inbox management
+- Match reporting with auto-resolution and dispute handling
+- Admin dispute resolution system
 
 ## Setup
 
@@ -187,10 +189,28 @@ Run `npm run test-elo` to test the ELO calculation system.
 - **Role badges** and rank highlighting
 
 ### Challenge System
-- **Player-to-player challenges** via profile pages
-- **Pending challenge tracking** to prevent duplicates
-- **Challenge status management** (Pending, Accepted, Declined, Expired)
-- **Redirect to inbox** for challenge management (stub implementation)
+- **Player-to-player challenges** via profile pages with format and deck selection
+- **Challenge modal** with Best of 1/3 format selection and deck picker
+- **Inbox management** with separate tabs for challenges and matches
+- **Challenge acceptance** with deck selection and automatic match creation
+- **Challenge status tracking** (Pending, Accepted, Declined, Locked, Expired)
+- **Real-time polling** every 30 seconds for inbox updates
+
+### Match Reporting & Dispute Resolution
+- **Dual player reporting** system for match results
+- **Auto-resolution** when both players agree on results
+- **Dispute handling** when reports conflict (flagged for admin review)
+- **Provisional ELO updates** for single reports
+- **Admin dispute resolution** with manual winner/games selection
+- **ELO recalculation** on dispute resolution
+- **Match status tracking** (Pending, Completed, Disputed)
+
+### Inbox System
+- **Unified inbox** for challenges and matches
+- **Challenge management** - accept/decline with deck selection
+- **Match reporting** interface for pending matches
+- **Real-time updates** via polling
+- **Status indicators** for unread challenges and pending reports
 
 ### Seasonal System
 - **Season management** with start/end dates

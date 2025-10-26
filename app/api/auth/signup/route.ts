@@ -56,8 +56,8 @@ export async function POST(request: NextRequest) {
         username: user.username,
         email: user.email,
         role: user.role,
-        eloLifetime: user.eloLifetime,
-        eloSeasonal: user.eloSeasonal
+        eloLifetime: Math.round(user.eloLifetime),
+        eloSeasonal: Math.round(user.eloSeasonal)
       }
     });
 
@@ -70,7 +70,7 @@ export async function POST(request: NextRequest) {
     
     // Handle validation errors
     if (error instanceof Error && error.message.includes('validation failed')) {
-      const validationError = error as any;
+      const validationError = error as unknown as { errors: Record<string, { kind: string; message: string }> };
       if (validationError.errors) {
         const fieldErrors = Object.keys(validationError.errors).map(field => {
           const fieldError = validationError.errors[field];

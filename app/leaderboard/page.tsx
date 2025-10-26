@@ -78,13 +78,6 @@ export default function LeaderboardPage() {
     }
   };
 
-  const getRoleBadgeColor = (role: string) => {
-    switch (role) {
-      case 'admin': return 'bg-red-100 text-red-800';
-      case 'organizer': return 'bg-green-100 text-green-800';
-      default: return 'bg-blue-100 text-blue-800';
-    }
-  };
 
   const getRankBadgeColor = (rank: number) => {
     if (rank === 1) return 'bg-yellow-100 text-yellow-800';
@@ -179,9 +172,6 @@ export default function LeaderboardPage() {
                       Username
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       ELO
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -208,13 +198,8 @@ export default function LeaderboardPage() {
                           {entry.username}
                         </Link>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getRoleBadgeColor(entry.role)}`}>
-                          {entry.role}
-                        </span>
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {entry.elo}
+                        {Math.round(entry.elo)}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {entry.winRate}%

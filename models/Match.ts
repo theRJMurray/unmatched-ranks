@@ -14,6 +14,8 @@ export interface IMatch extends Document {
   eloSeasonalStartP1: number;
   eloSeasonalStartP2: number;
   resolvedP1GamesWon: number | null;
+  resolvedBy?: mongoose.Types.ObjectId;
+  resolvedAt?: Date;
   // Updated reports structure
   reports: Array<{
     reporterId: mongoose.Types.ObjectId;
@@ -79,6 +81,13 @@ const MatchSchema = new Schema<IMatch>({
   resolvedP1GamesWon: {
     type: Number,
     default: null
+  },
+  resolvedBy: {
+    type: Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  resolvedAt: {
+    type: Date
   },
   // Updated reports structure
   reports: [{

@@ -43,6 +43,12 @@ export default function DashboardPage() {
               </h1>
             </div>
             <div className="flex items-center space-x-4">
+              <Link href="/inbox" className="text-indigo-600 hover:text-indigo-500">
+                Inbox
+              </Link>
+              <Link href="/leaderboard" className="text-indigo-600 hover:text-indigo-500">
+                Leaderboard
+              </Link>
               <span className="text-gray-700">
                 Welcome, {user.username}
               </span>
@@ -73,7 +79,7 @@ export default function DashboardPage() {
                     Lifetime ELO
                   </h3>
                   <p className="text-3xl font-bold text-indigo-600">
-                    {user.eloLifetime}
+                    {Math.round(user.eloLifetime)}
                   </p>
                 </div>
                 <div className="bg-white p-6 rounded-lg shadow">
@@ -81,7 +87,7 @@ export default function DashboardPage() {
                     Seasonal ELO
                   </h3>
                   <p className="text-3xl font-bold text-green-600">
-                    {user.eloSeasonal}
+                    {Math.round(user.eloSeasonal)}
                   </p>
                 </div>
                 <div className="bg-white p-6 rounded-lg shadow">

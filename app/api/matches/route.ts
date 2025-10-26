@@ -7,23 +7,45 @@ import { getCurrentUser } from '@/lib/auth';
 // GET /api/matches - List matches with populated user data
 export async function GET(request: NextRequest) {
   try {
-    const currentUser = getCurrentUser(request);
+    const { searchParams } = new URL(request.url);
+    const userId = searchParams.get('userId');
     
-    if (!currentUser) {
-      return NextResponse.json(
-        { error: 'Not authenticated' },
-        { status: 401 }
-      );
-    }
-
     await connectDB();
+
+    let query = {};
+    let currentUser = null;
+
+    if (userId === 'me') {
+      currentUser = getCurrentUser(request);
+      if (!currentUser) {
+        return NextResponse.json(
+          { error: 'Not authenticated' },
+          { status: 401 }
+        );
+      }
+      query = {
+        $or: [
+          { player1Id: currentUser.userId },
+          { player2Id: currentUser.userId }
+        ]
+      };
+    } else {
+      // For admin dashboard - no filtering
+      currentUser = getCurrentUser(request);
+      if (!currentUser || currentUser.role !== 'admin') {
+        return NextResponse.json(
+          { error: 'Admin access required' },
+          { status: 403 }
+        );
+      }
+    }
     
-    const matches = await Match.find()
+    const matches = await Match.find(query)
       .populate('player1Id', 'username')
       .populate('player2Id', 'username')
       .populate('winner', 'username')
       .sort({ createdAt: -1 })
-      .limit(20);
+      .limit(50);
 
     return NextResponse.json({ matches });
   } catch (error) {

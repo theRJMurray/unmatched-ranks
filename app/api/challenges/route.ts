@@ -4,6 +4,41 @@ import Challenge from '@/models/Challenge';
 import User from '@/models/User';
 import { getCurrentUser } from '@/lib/auth';
 
+// GET /api/challenges - Get challenges for current user
+export async function GET(request: NextRequest) {
+  try {
+    const currentUser = getCurrentUser(request);
+    
+    if (!currentUser) {
+      return NextResponse.json(
+        { error: 'Not authenticated' },
+        { status: 401 }
+      );
+    }
+
+    await connectDB();
+
+    // Get challenges where user is either challenger or challenged
+    const challenges = await Challenge.find({
+      $or: [
+        { challengerId: currentUser.userId },
+        { challengedId: currentUser.userId }
+      ]
+    })
+      .populate('challengerId', 'username')
+      .populate('challengedId', 'username')
+      .sort({ createdAt: -1 });
+
+    return NextResponse.json({ challenges });
+  } catch (error) {
+    console.error('Get challenges error:', error);
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    );
+  }
+}
+
 // POST /api/challenges - Create a new challenge
 export async function POST(request: NextRequest) {
   try {
@@ -16,11 +51,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { challengedId } = await request.json();
+    const { challengedId, proposedFormat, challengerDeck } = await request.json();
 
-    if (!challengedId) {
+    if (!challengedId || !proposedFormat || !challengerDeck) {
       return NextResponse.json(
-        { error: 'Challenged user ID is required' },
+        { error: 'Challenged user ID, format, and deck are required' },
         { status: 400 }
       );
     }
@@ -63,6 +98,8 @@ export async function POST(request: NextRequest) {
     const challenge = new Challenge({
       challengerId: currentUser.userId,
       challengedId,
+      proposedFormat,
+      challengerDeck,
       status: 'Pending'
     });
 

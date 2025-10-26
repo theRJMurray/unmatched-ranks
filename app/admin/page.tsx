@@ -26,13 +26,14 @@ interface User {
 
 interface Match {
   _id: string;
-  player1Id: { username: string };
-  player2Id: { username: string };
+  player1Id: { _id: string; username: string };
+  player2Id: { _id: string; username: string };
   deck1: string;
   deck2: string;
   format: 'best-of-1' | 'best-of-3';
-  winner: { username: string } | null;
+  winner: { _id: string; username: string } | null;
   status: 'Pending' | 'Completed' | 'Disputed';
+  resolvedP1GamesWon: number | null;
   createdAt: string;
 }
 
@@ -52,6 +53,12 @@ export default function AdminDashboard() {
     deck1: '',
     deck2: '',
     format: 'best-of-1' as 'best-of-1' | 'best-of-3'
+  });
+  const [matchFilter, setMatchFilter] = useState<'All' | 'Pending' | 'Disputed' | 'Completed'>('All');
+  const [showResolveModal, setShowResolveModal] = useState<Match | null>(null);
+  const [resolveData, setResolveData] = useState({
+    p1GamesWon: 1,
+    p2GamesWon: 0
   });
 
   useEffect(() => {
@@ -144,6 +151,39 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Error creating match:', error);
       alert('Failed to create match');
+    }
+  };
+
+  const handleResolveDispute = async () => {
+    if (!showResolveModal) return;
+
+    try {
+      // Determine winner based on games won
+      const winnerId = resolveData.p1GamesWon > resolveData.p2GamesWon 
+        ? showResolveModal.player1Id._id 
+        : showResolveModal.player2Id._id;
+
+      const response = await fetch(`/api/matches/${showResolveModal._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          winnerId: winnerId,
+          resolvedP1GamesWon: resolveData.p1GamesWon,
+          status: 'Completed'
+        })
+      });
+
+      if (response.ok) {
+        setShowResolveModal(null);
+        setResolveData({ p1GamesWon: 1, p2GamesWon: 0 });
+        loadData();
+      } else {
+        const error = await response.json();
+        alert(error.error || 'Failed to resolve dispute');
+      }
+    } catch (error) {
+      console.error('Error resolving dispute:', error);
+      alert('Failed to resolve dispute');
     }
   };
 
@@ -276,10 +316,10 @@ export default function AdminDashboard() {
                               </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {user.eloLifetime}
+                              {Math.round(user.eloLifetime)}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {user.eloSeasonal}
+                              {Math.round(user.eloSeasonal)}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               <select
@@ -305,12 +345,24 @@ export default function AdminDashboard() {
                 <div>
                   <div className="flex justify-between items-center mb-6">
                     <h2 className="text-2xl font-bold text-gray-900">Matches</h2>
-                    <button
-                      onClick={() => setShowCreateMatchModal(true)}
-                      className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
-                    >
-                      Create Match
-                    </button>
+                    <div className="flex space-x-4">
+                      <select
+                        value={matchFilter}
+                        onChange={(e) => setMatchFilter(e.target.value as 'All' | 'Pending' | 'Disputed' | 'Completed')}
+                        className="border border-gray-300 rounded-md px-3 py-2"
+                      >
+                        <option value="All">All</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Disputed">Disputed</option>
+                        <option value="Completed">Completed</option>
+                      </select>
+                      <button
+                        onClick={() => setShowCreateMatchModal(true)}
+                        className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
+                      >
+                        Create Match
+                      </button>
+                    </div>
                   </div>
                   <div className="bg-white shadow overflow-hidden sm:rounded-md">
                     <table className="min-w-full divide-y divide-gray-200">
@@ -337,7 +389,9 @@ export default function AdminDashboard() {
                         </tr>
                       </thead>
                       <tbody className="bg-white divide-y divide-gray-200">
-                        {matches.map((match) => (
+                        {matches
+                          .filter(match => matchFilter === 'All' || match.status === matchFilter)
+                          .map((match) => (
                           <tr key={match._id}>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {new Date(match.createdAt).toLocaleDateString()}
@@ -353,15 +407,36 @@ export default function AdminDashboard() {
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                               {match.winner ? match.winner.username : 'Pending'}
+                              {match.status === 'Completed' && match.resolvedP1GamesWon !== null && (
+                                <div className="text-xs text-gray-400">
+                                  {match.resolvedP1GamesWon}-{match.format === 'best-of-1' ? 1 - match.resolvedP1GamesWon : 2 - match.resolvedP1GamesWon}
+                                </div>
+                              )}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                                match.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                                match.status === 'Disputed' ? 'bg-red-100 text-red-800' :
-                                'bg-yellow-100 text-yellow-800'
-                              }`}>
-                                {match.status}
-                              </span>
+                              <div className="flex items-center space-x-2">
+                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                  match.status === 'Completed' ? 'bg-green-100 text-green-800' :
+                                  match.status === 'Disputed' ? 'bg-red-100 text-red-800' :
+                                  'bg-yellow-100 text-yellow-800'
+                                }`}>
+                                  {match.status}
+                                </span>
+                                {match.status === 'Disputed' && (
+                                  <button
+                                    onClick={() => {
+                                      setShowResolveModal(match);
+                                      setResolveData({ 
+                                        p1GamesWon: match.format === 'best-of-1' ? 1 : 2,
+                                        p2GamesWon: 0
+                                      });
+                                    }}
+                                    className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700"
+                                  >
+                                    Resolve
+                                  </button>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -487,6 +562,87 @@ export default function AdminDashboard() {
                   className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                 >
                   Create Match
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Resolve Dispute Modal */}
+      {showResolveModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Resolve Dispute
+              </h3>
+              <p className="text-sm text-gray-600 mb-4">
+                {showResolveModal.player1Id.username} vs {showResolveModal.player2Id.username}
+              </p>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Games Won:
+                </label>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">
+                      {showResolveModal.player1Id.username}:
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max={showResolveModal.format === 'best-of-1' ? 1 : 2}
+                      value={resolveData.p1GamesWon}
+                      onChange={(e) => setResolveData({ ...resolveData, p1GamesWon: parseInt(e.target.value) || 0 })}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-gray-600 mb-1">
+                      {showResolveModal.player2Id.username}:
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      max={showResolveModal.format === 'best-of-1' ? 1 : 2}
+                      value={resolveData.p2GamesWon}
+                      onChange={(e) => setResolveData({ ...resolveData, p2GamesWon: parseInt(e.target.value) || 0 })}
+                      className="w-full border border-gray-300 rounded-md px-3 py-2"
+                    />
+                  </div>
+                </div>
+                <div className="text-sm text-gray-500 mt-2">
+                  {showResolveModal.format === 'best-of-1' 
+                    ? 'Winner needs 1 game' 
+                    : 'Winner needs 2 games (best of 3)'
+                  }
+                </div>
+                <div className="text-sm text-gray-600 mt-1">
+                  Result: {resolveData.p1GamesWon}-{resolveData.p2GamesWon}
+                  {resolveData.p1GamesWon > resolveData.p2GamesWon ? ` (${showResolveModal.player1Id.username} wins)` : 
+                   resolveData.p2GamesWon > resolveData.p1GamesWon ? ` (${showResolveModal.player2Id.username} wins)` : 
+                   ' (Tie - invalid)'}
+                </div>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setShowResolveModal(null);
+                    setResolveData({ p1GamesWon: showResolveModal?.format === 'best-of-1' ? 1 : 2, p2GamesWon: 0 });
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleResolveDispute}
+                  disabled={resolveData.p1GamesWon === resolveData.p2GamesWon}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 disabled:bg-gray-300"
+                >
+                  Resolve Dispute
                 </button>
               </div>
             </div>

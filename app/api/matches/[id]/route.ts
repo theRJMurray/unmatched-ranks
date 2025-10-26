@@ -33,7 +33,7 @@ export async function PUT(
       );
     }
 
-    const { winner, status, p1GamesWon } = await request.json();
+    const { winnerId, status, resolvedP1GamesWon } = await request.json();
     const { id } = await params;
 
     await connectDB();
@@ -47,9 +47,9 @@ export async function PUT(
     }
 
     // Handle admin direct resolution
-    if (p1GamesWon !== undefined) {
+    if (resolvedP1GamesWon !== undefined) {
       // Admin is directly setting the result
-      if (!isValidGamesWon(p1GamesWon, match.format)) {
+      if (!isValidGamesWon(resolvedP1GamesWon, match.format)) {
         return NextResponse.json(
           { error: `Invalid games won count for ${match.format}` },
           { status: 400 }
@@ -57,21 +57,12 @@ export async function PUT(
       }
 
       const totalGames = getTotalGames(match.format);
-      const winnerResult = determineWinner(p1GamesWon, match.format);
-      
-      if (!winnerResult) {
-        return NextResponse.json(
-          { error: 'Invalid match result' },
-          { status: 400 }
-        );
-      }
-
-      const winnerId = winnerResult === 1 ? match.player1Id : match.player2Id;
-      
-      // Update match with resolved result
+      // Update match with admin resolution
       match.winner = winnerId;
-      match.status = 'Completed';
-      match.resolvedP1GamesWon = p1GamesWon;
+      match.status = status || 'Completed';
+      match.resolvedP1GamesWon = resolvedP1GamesWon;
+      match.resolvedBy = currentUser.userId;
+      match.resolvedAt = new Date();
 
       // Calculate and apply ELO changes
       await applyEloChanges(match);
@@ -102,7 +93,16 @@ export async function PUT(
 }
 
 // Helper function to apply ELO changes to users
-async function applyEloChanges(match: any) {
+async function applyEloChanges(match: { 
+  player1Id: string; 
+  player2Id: string; 
+  eloLifetimeStartP1: number; 
+  eloLifetimeStartP2: number; 
+  eloSeasonalStartP1: number; 
+  eloSeasonalStartP2: number; 
+  resolvedP1GamesWon: number; 
+  format: 'best-of-1' | 'best-of-3'; 
+}) {
   const totalGames = getTotalGames(match.format);
   const p1GamesWon = match.resolvedP1GamesWon;
 
@@ -156,7 +156,19 @@ async function applyEloChanges(match: any) {
 }
 
 // Helper function to resolve match based on reports
-async function resolveMatchFromReports(match: any) {
+async function resolveMatchFromReports(match: { 
+  player1Id: string; 
+  player2Id: string; 
+  eloLifetimeStartP1: number; 
+  eloLifetimeStartP2: number; 
+  eloSeasonalStartP1: number; 
+  eloSeasonalStartP2: number; 
+  resolvedP1GamesWon: number; 
+  format: 'best-of-1' | 'best-of-3'; 
+  reports: Array<{ reporterId: string; reportedWinnerId: string; reportedP1GamesWon: number }>;
+  winner?: string;
+  status: string;
+}) {
   if (match.reports.length === 0) {
     return; // No reports yet
   }

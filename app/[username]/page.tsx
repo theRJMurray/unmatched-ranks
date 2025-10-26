@@ -86,18 +86,37 @@ export default function UserProfilePage() {
     }
   };
 
+  const [showChallengeModal, setShowChallengeModal] = useState(false);
+  const [challengeData, setChallengeData] = useState({
+    format: 'bo1' as 'bo1' | 'bo3',
+    deck: ''
+  });
+
+  const UNMATCHED_DECKS = [
+    'Sherlock Holmes', 'Alice Wonderland', 'Medusa', 'Beowulf', 'Sinbad', 'Robin Hood',
+    'King Arthur', 'Medea', 'Sun Wukong', 'Valhalla', 'Caesar', 'Hatshepsut',
+    'Rapunzel', 'Jungle Book', 'Nijinsky', 'Hemingway', 'Tesla', 'Buffalo Bill',
+    'Rosa Parks', 'Frida Kahlo', 'T.E. Lawrence', 'Grace O\'Malley', 'Cobble & Fog',
+    'Bruce Lee', 'Battle of Legends'
+  ];
+
   const handleChallenge = async () => {
-    if (!profile || !currentUser) return;
+    if (!profile || !currentUser || !challengeData.deck) return;
 
     try {
       const response = await fetch('/api/challenges', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ challengedId: profile.id })
+        body: JSON.stringify({ 
+          challengedId: profile.id,
+          proposedFormat: challengeData.format,
+          challengerDeck: challengeData.deck
+        })
       });
 
       if (response.ok) {
-        // Redirect to inbox (stub for now)
+        setShowChallengeModal(false);
+        setChallengeData({ format: 'bo1', deck: '' });
         router.push('/inbox');
       } else {
         const error = await response.json();
@@ -134,7 +153,7 @@ export default function UserProfilePage() {
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-gray-900 mb-4">User Not Found</h1>
-          <p className="text-gray-600 mb-4">The user "{username}" does not exist.</p>
+          <p className="text-gray-600 mb-4">The user &quot;{username}&quot; does not exist.</p>
           <Link href="/leaderboard" className="text-indigo-600 hover:text-indigo-500">
             View Leaderboard
           </Link>
@@ -185,7 +204,7 @@ export default function UserProfilePage() {
               </div>
               <div className="text-right">
                 <div className="text-4xl font-bold text-indigo-600">
-                  {eloType === 'lifetime' ? profile.eloLifetime : profile.eloSeasonal}
+                  {Math.round(eloType === 'lifetime' ? profile.eloLifetime : profile.eloSeasonal)}
                 </div>
                 <div className="text-sm text-gray-500">
                   {eloType === 'lifetime' ? 'Lifetime ELO' : 'Seasonal ELO'}
@@ -209,7 +228,7 @@ export default function UserProfilePage() {
             <div className="mt-6 flex space-x-4">
               {canChallenge && (
                 <button
-                  onClick={handleChallenge}
+                  onClick={() => setShowChallengeModal(true)}
                   className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700"
                 >
                   Challenge
@@ -308,6 +327,82 @@ export default function UserProfilePage() {
           </div>
         </div>
       </main>
+
+      {/* Challenge Modal */}
+      {showChallengeModal && (
+        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
+          <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div className="mt-3">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                Challenge {profile.username}
+              </h3>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Format:
+                </label>
+                <div className="space-y-2">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="bo1"
+                      checked={challengeData.format === 'bo1'}
+                      onChange={(e) => setChallengeData({ ...challengeData, format: e.target.value as 'bo1' | 'bo3' })}
+                      className="mr-2"
+                    />
+                    Best of 1
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      value="bo3"
+                      checked={challengeData.format === 'bo3'}
+                      onChange={(e) => setChallengeData({ ...challengeData, format: e.target.value as 'bo1' | 'bo3' })}
+                      className="mr-2"
+                    />
+                    Best of 3
+                  </label>
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Your deck:
+                </label>
+                <select
+                  value={challengeData.deck}
+                  onChange={(e) => setChallengeData({ ...challengeData, deck: e.target.value })}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                >
+                  <option value="">Choose a deck...</option>
+                  {UNMATCHED_DECKS.map((deck) => (
+                    <option key={deck} value={deck}>{deck}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setShowChallengeModal(false);
+                    setChallengeData({ format: 'bo1', deck: '' });
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleChallenge}
+                  disabled={!challengeData.deck}
+                  className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-gray-300"
+                >
+                  Send Challenge
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

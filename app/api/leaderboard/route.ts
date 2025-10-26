@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
       rank: index + 1,
       id: user._id,
       username: user.username,
-      elo: type === 'lifetime' ? user.eloLifetime : user.eloSeasonal,
+      elo: Math.round(type === 'lifetime' ? user.eloLifetime : user.eloSeasonal),
       matchesPlayed: user.matchesPlayed,
       wins: user.wins,
       winRate: user.matchesPlayed > 0 ? (user.wins / user.matchesPlayed * 100).toFixed(1) : '0.0',

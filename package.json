@@ -11,7 +11,8 @@
     "promote-admin": "tsx scripts/promote-to-admin.ts",
     "check-role": "tsx scripts/check-user-role.ts",
     "test-elo": "tsx scripts/test-elo.ts",
-    "seed-season": "tsx scripts/seed-season.ts"
+    "seed-season": "tsx scripts/seed-season.ts",
+    "fix-matches": "tsx scripts/fix-matches.ts"
   },
   "dependencies": {
     "@types/bcrypt": "^6.0.0",

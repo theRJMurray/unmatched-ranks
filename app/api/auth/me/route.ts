@@ -37,8 +37,8 @@ export async function GET(request: NextRequest) {
         username: user.username,
         email: user.email,
         role: user.role,
-        eloLifetime: user.eloLifetime,
-        eloSeasonal: user.eloSeasonal,
+        eloLifetime: Math.round(user.eloLifetime),
+        eloSeasonal: Math.round(user.eloSeasonal),
         createdAt: user.createdAt
       }
     });
